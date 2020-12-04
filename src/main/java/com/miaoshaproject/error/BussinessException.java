@@ -4,7 +4,7 @@ package com.miaoshaproject.error;
  * @Author liuzike
  * @Date 12/2/20
  **/
-//包装器业务异常类实现
+//包装器(Wrapper 模式)业务异常类实现
 public class BussinessException extends Exception implements CommonError {
 
     private CommonError commonError;
