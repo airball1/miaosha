@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -84,7 +85,15 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     public List<ItemModel> listItem() {
-        return null;
+        List<ItemDO> itemDOList = itemDOMapper.listItem();
+        List<ItemModel> itemModelList = new ArrayList<>();
+
+        for (ItemDO itemDO : itemDOList) {
+            ItemStockDO itemStockDO = itemStockDOMapper.selectByItemId(itemDO.getId());
+            itemModelList.add(convertModelFromDataObject(itemDO, itemStockDO));
+        }
+
+        return itemModelList;
     }
 
     @Override

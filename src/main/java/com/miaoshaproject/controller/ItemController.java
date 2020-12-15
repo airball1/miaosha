@@ -12,6 +12,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @Author liuzike
@@ -57,5 +59,30 @@ public class ItemController extends BaseController {
         BeanUtils.copyProperties(itemModel, itemVO);
 
         return itemVO;
+    }
+
+    //商品详情页浏览
+    @RequestMapping(value = "/get", method = {RequestMethod.GET})
+    @ResponseBody
+    public CommonReturnType getItem(@RequestParam(name = "id") Integer id) {
+        ItemModel itemModel = itemService.getItemById(id);
+
+        ItemVO itemVO = convertVOFromModel(itemModel);
+
+        return CommonReturnType.create(itemVO);
+    }
+
+    //商品列表页面浏览
+    @RequestMapping(value = "/list", method = {RequestMethod.GET})
+    @ResponseBody
+    public CommonReturnType listItem() {
+        List<ItemModel> itemModelList = itemService.listItem();
+        List<ItemVO> itemVOList = new ArrayList<>();
+
+        for (ItemModel itemModel : itemModelList) {
+            itemVOList.add(convertVOFromModel(itemModel));
+        }
+
+        return CommonReturnType.create(itemVOList);
     }
 }
