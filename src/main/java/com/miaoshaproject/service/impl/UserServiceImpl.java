@@ -50,7 +50,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void register(UserModel userModel) throws BussinessException {
         if (userModel == null) {
             throw new BussinessException(EmBussinessError.PARAMETER_VALIDATION_ERROR);

@@ -42,8 +42,11 @@ public class OrderServiceImpl implements OrderService {
     @Autowired
     private SequenceDOMapper sequenceDOMapper;
 
+    @Autowired
+    private OrderService orderService;
+
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public OrderModel createOrder(Integer userId, Integer itemId, Integer amount) throws BussinessException {
         //1.校验下单状态，下单的商品是否存在，用户是否合法，购买数量是否正确
         ItemModel itemModel = itemService.getItemById(itemId);
@@ -75,7 +78,7 @@ public class OrderServiceImpl implements OrderService {
         orderModel.setOrderPrice(itemModel.getPrice().multiply(new BigDecimal(amount)));
 
         //生成交易流水号
-        orderModel.setId(generateOrderNo());
+        orderModel.setId(orderService.generateOrderNo());
         OrderDO orderDO = convertFromOrderModel(orderModel);
         orderDOMapper.insertSelective(orderDO);
 
@@ -87,7 +90,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    private String generateOrderNo(){
+    public String generateOrderNo(){
         //订单号有16位
 
         StringBuilder stringBuilder = new StringBuilder();

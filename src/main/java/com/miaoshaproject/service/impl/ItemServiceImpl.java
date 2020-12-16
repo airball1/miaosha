@@ -60,7 +60,7 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public ItemModel createItem(ItemModel itemModel) throws BussinessException {
         //校验入参
         ValidationResult result = validator.validate(itemModel);
@@ -113,7 +113,7 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public boolean decreaseStock(Integer itemId, Integer amount) throws BussinessException {
         int affectedRow = itemStockDOMapper.decreaseStock(itemId, amount);
         if (affectedRow > 0) {
@@ -126,7 +126,7 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void increaseSales(Integer itemId, Integer amount) throws BussinessException {
         itemDOMapper.increaseSales(itemId, amount);
     }

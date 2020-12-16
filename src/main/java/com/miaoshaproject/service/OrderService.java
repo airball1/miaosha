@@ -10,4 +10,6 @@ import com.miaoshaproject.service.model.OrderModel;
 public interface OrderService {
 
     OrderModel createOrder(Integer userId, Integer ItemId, Integer amount) throws BussinessException;
+
+    String generateOrderNo();
 }
