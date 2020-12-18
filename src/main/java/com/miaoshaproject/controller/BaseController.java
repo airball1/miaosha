@@ -17,22 +17,5 @@ import java.util.Map;
  * @Date 12/3/20
  **/
 public class BaseController {
-
-    //定义exceptionhandler解决未被controller层吸收的exception
-    @ExceptionHandler(Exception.class)
-    @ResponseStatus(HttpStatus.OK)
-    @ResponseBody
-    public Object handlerException(HttpServletRequest request, Exception ex) {
-        Map<String, Object> responseData = new HashMap<>();
-        if (ex instanceof BussinessException) {
-            BussinessException bussinessException = (BussinessException)ex;
-            responseData.put("errCode", bussinessException.getErrCode());
-            responseData.put("errMsg", bussinessException.getErrMsg());
-        } else {
-            responseData.put("errCode", EmBussinessError.UNKNOWN_ERROR.getErrCode());
-            responseData.put("errMsg", EmBussinessError.UNKNOWN_ERROR.getErrMsg());
-        }
-
-        return CommonReturnType.create(responseData, "fail");
-    }
+    
 }
