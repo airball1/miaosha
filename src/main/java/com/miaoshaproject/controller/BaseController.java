@@ -17,5 +17,5 @@ import java.util.Map;
  * @Date 12/3/20
  **/
 public class BaseController {
-    
+
 }
