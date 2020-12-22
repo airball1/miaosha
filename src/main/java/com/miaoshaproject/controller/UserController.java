@@ -9,6 +9,7 @@ import com.miaoshaproject.service.UserService;
 import com.miaoshaproject.service.model.UserModel;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
@@ -19,6 +20,8 @@ import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Random;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @Author liuzike
@@ -34,6 +37,9 @@ public class UserController extends BaseController{
 
     @Autowired
     private HttpServletRequest httpServletRequest;
+
+    @Autowired
+    private RedisTemplate redisTemplate;
 
 
     //用户登入接口
@@ -51,11 +57,20 @@ public class UserController extends BaseController{
         //用户登入服务，用来校验用户登入是否合法
         UserModel userModel = userService.validateLogin(telphone, this.EncodeByMd5(password));
 
-        //将登入凭着加入到用户登入成功的session内
-        this.httpServletRequest.getSession().setAttribute("IS_LOGIN", true);
-        this.httpServletRequest.getSession().setAttribute("LOGIN_USER", userModel);
+        //生成登入凭证token, UUID
+        String uuidToken  = UUID.randomUUID().toString();
+        uuidToken = uuidToken.replace("-", "");
 
-        return CommonReturnType.create(null);
+        //建立token和用户登陆态之间的联系
+        redisTemplate.opsForValue().set(uuidToken, userModel);
+        redisTemplate.expire(uuidToken, 1,TimeUnit.HOURS);
+
+//        //将登入凭着加入到用户登入成功的session内
+//        this.httpServletRequest.getSession().setAttribute("IS_LOGIN", true);
+//        this.httpServletRequest.getSession().setAttribute("LOGIN_USER", userModel);
+
+        //下发了token
+        return CommonReturnType.create(uuidToken);
     }
 
 
