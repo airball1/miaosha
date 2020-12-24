@@ -86,11 +86,12 @@ public class ItemController extends BaseController {
     public CommonReturnType getItem(@RequestParam(name = "id") Integer id) {
         ItemModel itemModel = null;
 
-        itemModel = (ItemModel)redisTemplate.opsForValue().get("item_"+id);
+        //先取本地缓存
+        itemModel = (ItemModel) cacheService.getFromCommonCache("item_"+id);
 
         if (itemModel == null) {
             //根据商品的id到redis内获取
-            itemModel = (ItemModel) redisTemplate.opsForValue().get("item_" + id);
+            itemModel = (ItemModel) redisTemplate.opsForValue().get("item_" +id);
 
             //若redis内不存在对应的itemModel,则访问下游service
             if (itemModel == null) {
