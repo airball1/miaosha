@@ -2,9 +2,9 @@ package com.miaoshaproject.controller;
 
 import com.miaoshaproject.error.BussinessException;
 import com.miaoshaproject.error.EmBussinessError;
+import com.miaoshaproject.mq.MqProducer;
 import com.miaoshaproject.response.CommonReturnType;
 import com.miaoshaproject.service.OrderService;
-import com.miaoshaproject.service.model.OrderModel;
 import com.miaoshaproject.service.model.UserModel;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,7 +12,6 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.client.RestTemplate;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -33,6 +32,9 @@ public class OrderController extends BaseController{
 
     @Autowired
     private RedisTemplate redisTemplate;
+
+    @Autowired
+    private MqProducer mqProducer;
 
     //封装下单请求
     @RequestMapping(value = "/createorder", method = {RequestMethod.POST}, consumes = {MediaType.APPLICATION_FORM_URLENCODED_VALUE})
@@ -57,7 +59,11 @@ public class OrderController extends BaseController{
 
         //UserModel userModel = (UserModel)httpServletRequest.getSession().getAttribute("LOGIN_USER");
 
-        OrderModel orderModel = orderService.createOrder(userModel.getId(), itemId, promoId, amount);
+        //OrderModel orderModel = orderService.createOrder(userModel.getId(), itemId, promoId, amount);
+        if (!mqProducer.transactionAsyncReduceStock(userModel.getId(), itemId, promoId, amount)) {
+            throw new BussinessException(EmBussinessError.UNKNOWN_ERROR, "下单失败");
+        }
+
 
         return CommonReturnType.create(null);
     }
