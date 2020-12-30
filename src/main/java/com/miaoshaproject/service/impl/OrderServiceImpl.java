@@ -2,8 +2,10 @@ package com.miaoshaproject.service.impl;
 
 import com.miaoshaproject.dao.OrderDOMapper;
 import com.miaoshaproject.dao.SequenceDOMapper;
+import com.miaoshaproject.dao.StockLogDOMapper;
 import com.miaoshaproject.dataobject.OrderDO;
 import com.miaoshaproject.dataobject.SequenceDO;
+import com.miaoshaproject.dataobject.StockLogDO;
 import com.miaoshaproject.error.BussinessException;
 import com.miaoshaproject.error.EmBussinessError;
 import com.miaoshaproject.service.ItemService;
@@ -48,9 +50,12 @@ public class OrderServiceImpl implements OrderService {
     @Autowired
     private OrderService orderService;
 
+    @Autowired
+    private StockLogDOMapper stockLogDOMapper;
+
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public OrderModel createOrder(Integer userId, Integer itemId, Integer promoId, Integer amount) throws BussinessException {
+    public OrderModel createOrder(Integer userId, Integer itemId, Integer promoId, Integer amount, String stockLogId) throws BussinessException {
         //1.校验下单状态，下单的商品是否存在，用户是否合法，购买数量是否正确
         //ItemModel itemModel = itemService.getItemById(itemId);
         ItemModel itemModel = itemService.getItemByInCache(itemId);
@@ -105,6 +110,15 @@ public class OrderServiceImpl implements OrderService {
 
         //加上商品的销量
         itemService.increaseSales(itemId, amount);
+
+        //设置库存流水状态为成功
+        StockLogDO stockLogDO = stockLogDOMapper.selectByPrimaryKey(stockLogId);
+        if (stockLogDO == null) {
+            throw new BussinessException(EmBussinessError.UNKNOWN_ERROR);
+        }
+
+        stockLogDO.setStatus(2);
+        stockLogDOMapper.updateByPrimaryKeySelective(stockLogDO);
 
 //        TransactionSynchronizationManager.registerSynchronization((new TransactionSynchronizationAdapter() {
 //            @Override

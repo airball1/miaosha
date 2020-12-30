@@ -4,6 +4,7 @@ import com.miaoshaproject.error.BussinessException;
 import com.miaoshaproject.error.EmBussinessError;
 import com.miaoshaproject.mq.MqProducer;
 import com.miaoshaproject.response.CommonReturnType;
+import com.miaoshaproject.service.ItemService;
 import com.miaoshaproject.service.OrderService;
 import com.miaoshaproject.service.model.UserModel;
 import org.apache.commons.lang3.StringUtils;
@@ -36,6 +37,9 @@ public class OrderController extends BaseController{
     @Autowired
     private MqProducer mqProducer;
 
+    @Autowired
+    private ItemService itemService;
+
     //封装下单请求
     @RequestMapping(value = "/createorder", method = {RequestMethod.POST}, consumes = {MediaType.APPLICATION_FORM_URLENCODED_VALUE})
     @ResponseBody
@@ -60,7 +64,16 @@ public class OrderController extends BaseController{
         //UserModel userModel = (UserModel)httpServletRequest.getSession().getAttribute("LOGIN_USER");
 
         //OrderModel orderModel = orderService.createOrder(userModel.getId(), itemId, promoId, amount);
-        if (!mqProducer.transactionAsyncReduceStock(userModel.getId(), itemId, promoId, amount)) {
+
+        //判断是否库存已售罄，若售罄的key存在，则直接返回下单失败
+        if (redisTemplate.hasKey("promo_item_stock_invalid_"+itemId)) {
+            throw new BussinessException(EmBussinessError.STOCK_NOT_ENOUGH);
+        }
+        //加入库存流水init状态
+        String stockLogId = itemService.initStockLog(itemId, amount);
+
+        //再去完成对应的下单事务型消息
+        if (!mqProducer.transactionAsyncReduceStock(userModel.getId(), itemId, promoId, amount, stockLogId)) {
             throw new BussinessException(EmBussinessError.UNKNOWN_ERROR, "下单失败");
         }
 
