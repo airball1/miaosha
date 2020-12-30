@@ -15,7 +15,9 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
+import javax.annotation.PostConstruct;
 import javax.servlet.http.HttpServletRequest;
+import java.util.concurrent.*;
 
 /**
  * @Author liuzike
@@ -43,6 +45,13 @@ public class OrderController extends BaseController{
 
     @Autowired
     private PromoService promoService;
+    
+    private ExecutorService executorService;
+
+    @PostConstruct
+    public void init(){
+        executorService = Executors.newFixedThreadPool(20);
+    }
 
     //生成秒杀令牌
     @RequestMapping(value = "/generatetoken", method = {RequestMethod.POST}, consumes = {MediaType.APPLICATION_FORM_URLENCODED_VALUE})
@@ -105,12 +114,30 @@ public class OrderController extends BaseController{
             }
         }
 
-        //加入库存流水init状态
-        String stockLogId = itemService.initStockLog(itemId, amount);
+        //同步调用线程池的submit方法
+        //拥塞窗口为20的等待队列，用来队列化泄洪
+        Future<Object> future = executorService.submit(new Callable<Object>() {
 
-        //再去完成对应的下单事务型消息
-        if (!mqProducer.transactionAsyncReduceStock(userModel.getId(), itemId, promoId, amount, stockLogId)) {
-            throw new BussinessException(EmBussinessError.UNKNOWN_ERROR, "下单失败");
+
+            @Override
+            public Object call() throws Exception {
+                //加入库存流水init状态
+                String stockLogId = itemService.initStockLog(itemId, amount);
+
+                //再去完成对应的下单事务型消息
+                if (!mqProducer.transactionAsyncReduceStock(userModel.getId(), itemId, promoId, amount, stockLogId)) {
+                    throw new BussinessException(EmBussinessError.UNKNOWN_ERROR, "下单失败");
+                }
+                return null;
+            }
+        });
+
+        try {
+            future.get();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
         }
 
 
