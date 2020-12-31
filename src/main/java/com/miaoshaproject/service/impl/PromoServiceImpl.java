@@ -79,7 +79,7 @@ public class PromoServiceImpl implements PromoService {
         redisTemplate.opsForValue().set("promo_item_stock_"+ itemModel.getId(), itemModel.getStock());
 
         //将大闸限制数字设到redis内
-        redisTemplate.opsForValue().set("promo_door _count_"+promoId, itemModel.getStock().intValue() * 5);
+        redisTemplate.opsForValue().set("promo_door_count_"+promoId, itemModel.getStock().intValue() * 5);
 
     }
 
